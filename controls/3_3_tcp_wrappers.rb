@@ -45,7 +45,7 @@ control 'cis-dil-benchmark-3.3.2' do
 
   describe file('/etc/hosts.allow') do
     it { should exist }
-    its('contents') { should match /^ALL:/ }
+    its('content') { should match /^ALL:/ }
   end
 end
 
