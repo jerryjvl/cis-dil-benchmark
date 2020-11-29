@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 # author: Kristian Vlaardingerbroek
+#
 
 title '1.2 Configure Software Updates'
 
@@ -25,8 +26,25 @@ control 'cis-dil-benchmark-1.2.1' do
   tag cis: 'distribution-independent-linux:1.2.1'
   tag level: 1
 
-  describe 'cis-dil-benchmark-1.2.1' do
-    skip 'Not implemented'
+  # Use an expected readable inventory file
+  describe file('/root/cis_allow_repositories') do
+    it { should exist }
+  end
+
+  if command('apt-cache').exist?
+    describe command('apt-cache policy | diff /root/cis_allow_repositories -') do
+      its('stdout') { should eq '' }
+    end
+  end
+  if command('yum').exist?
+    describe command('yum repo-list | diff /root/cis_allow_repositories -') do
+      its('stdout') { should eq '' }
+    end
+  end
+  if command('zypper').exist?
+    describe command('zypper repos | diff /root/cis_allow_repositories -') do
+      its('stdout') { should eq '' }
+    end
   end
 end
 
@@ -38,7 +56,19 @@ control 'cis-dil-benchmark-1.2.2' do
   tag cis: 'distribution-independent-linux:1.2.2'
   tag level: 1
 
-  describe 'cis-dil-benchmark-1.2.2' do
-    skip 'Not implemented'
+  # Use an expected readable inventory file
+  describe file('/root/cis_allow_repository_keys') do
+    it { should exist }
+  end
+
+  if command('apt-key').exist?
+    describe command('apt-key list | diff /root/cis_allow_repository_keys -') do
+      its('stdout') { should eq '' }
+    end
+  end
+  if command('rpm').exist?
+    describe command("rpm -q gpg-pubkey --qf '%{name}-%{version}-%{release} --> %{summary}\n' | diff /root/cis_allow_repository_keys -") do
+      its('stdout') { should eq '' }
+    end
   end
 end

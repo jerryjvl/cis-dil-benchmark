@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 # author: Kristian Vlaardingerbroek
+#
 
 cis_level = attribute('cis_level')
 
@@ -21,16 +22,26 @@ title '6.1 System File Permissions'
 
 control 'cis-dil-benchmark-6.1.1' do
   title 'Audit system file permissions'
-  desc  "The RPM and Debian package manager have a number of useful options. One of these, the --verify (or -v for RPM) option, can be used to verify that system packages are correctly installed. The --verify option can be used to verify a particular package or to verify all system packages. If no output is returned, the package is installed correctly. The following table describes the meaning of output from the verify option: Code Meaning\nS File size differs.\nM File mode differs (includes permissions and file type).\n5 The MD5 checksum differs.\nD The major and minor version numbers differ on a device file.\nL A mismatch occurs in a link.\nU The file ownership differs.\nG The file group owner differs.\nT The file time (mtime) differs.\nThe rpm -qf or dpkg -S command can be used to determine which package a particular file belongs to. For example the following commands determines which package the /bin/bash file belongs to:\n# rpm -qf /bin/bash\nbash-4.1.2-29.el6.x86_64\n# dpkg -S /bin/bash\nbash: /bin/bash\nTo verify the settings for the package that controls the /bin/bash file, run the following:\n# rpm -V bash-4.1.2-29.el6.x86_64\n.M.......    /bin/bash\n# dpkg --verify bash\n??5?????? c /etc/bash.bashrc\nNote that you can feed the output of the rpm -qf command to the rpm -V command:\n# rpm -V `rpm -qf /etc/passwd`\n.M...... c /etc/passwd\nS.5....T c /etc/printcap\n\nRationale: It is important to confirm that packaged system files and directories are maintained with the permissions they were intended to have from the OS vendor."
+  desc  "The RPM and Debian package manager have a number of useful options. One of these, the --verify (or -v for RPM) option, can be used to verify that system packages are correctly installed. The --verify option can be used to verify a particular package or to verify all system packages. If no output is returned, the package is installed correctly. The following table describes the meaning of output from the verify option: Code Meaning\nS File size differs.\nM File mode differs (includes permissions and file type).\n5 The checksum differs.\nD The major and minor version numbers differ on a device file.\nL A mismatch occurs in a link.\nU The file ownership differs.\nG The file group owner differs.\nT The file time (mtime) differs.\nThe rpm -qf or dpkg -S command can be used to determine which package a particular file belongs to. For example the following commands determines which package the /bin/bash file belongs to:\n# rpm -qf /bin/bash\nbash-4.1.2-29.el6.x86_64\n# dpkg -S /bin/bash\nbash: /bin/bash\nTo verify the settings for the package that controls the /bin/bash file, run the following:\n# rpm -V bash-4.1.2-29.el6.x86_64\n.M.......    /bin/bash\n# dpkg --verify bash\n??5?????? c /etc/bash.bashrc\nNote that you can feed the output of the rpm -qf command to the rpm -V command:\n# rpm -V `rpm -qf /etc/passwd`\n.M...... c /etc/passwd\nS.5....T c /etc/printcap\n\nRationale: It is important to confirm that packaged system files and directories are maintained with the permissions they were intended to have from the OS vendor."
   impact 0.0
 
   tag cis: 'distribution-independent-linux:6.1.1'
   tag level: 2
 
-  only_if {  cis_level == 2 }
+  only_if('CIS level 2') do
+    cis_level == 2
+  end
 
-  describe 'cis-dil-benchmark-6.1.1' do
-    skip 'Not implemented'
+  if command('rpm').exist?
+    describe command('rpm -Va --nomtime --nosize --nomd5 --nolinkto') do
+      its('stdout') { should eq '' }
+    end
+  end
+
+  if command('dpkg').exist?
+    describe command('dpkg --verify') do
+      its('stdout') { should eq '' }
+    end
   end
 end
 
@@ -57,11 +68,11 @@ control 'cis-dil-benchmark-6.1.2' do
       it { should be_readable.by 'other' }
       it { should_not be_writable.by 'other' }
       it { should_not be_executable.by 'other' }
-      its(:uid) { should cmp 0 }
-      its(:gid) { should cmp 0 }
-      its(:sticky) { should equal false }
-      its(:suid) { should equal false }
-      its(:sgid) { should equal false }
+      its('uid') { should cmp 0 }
+      its('gid') { should cmp 0 }
+      its('sticky') { should equal false }
+      its('suid') { should equal false }
+      its('sgid') { should equal false }
     end
   end
 end
@@ -91,11 +102,11 @@ control 'cis-dil-benchmark-6.1.3' do
       it { should_not be_readable.by 'other' }
       it { should_not be_writable.by 'other' }
       it { should_not be_executable.by 'other' }
-      its(:uid) { should cmp 0 }
-      its(:gid) { should cmp expected_gid }
-      its(:sticky) { should equal false }
-      its(:suid) { should equal false }
-      its(:sgid) { should equal false }
+      its('uid') { should cmp 0 }
+      its('gid') { should cmp expected_gid }
+      its('sticky') { should equal false }
+      its('suid') { should equal false }
+      its('sgid') { should equal false }
     end
   end
 end
@@ -123,11 +134,11 @@ control 'cis-dil-benchmark-6.1.4' do
       it { should be_readable.by 'other' }
       it { should_not be_writable.by 'other' }
       it { should_not be_executable.by 'other' }
-      its(:uid) { should cmp 0 }
-      its(:gid) { should cmp 0 }
-      its(:sticky) { should equal false }
-      its(:suid) { should equal false }
-      its(:sgid) { should equal false }
+      its('uid') { should cmp 0 }
+      its('gid') { should cmp 0 }
+      its('sticky') { should equal false }
+      its('suid') { should equal false }
+      its('sgid') { should equal false }
     end
   end
 end
@@ -157,11 +168,11 @@ control 'cis-dil-benchmark-6.1.5' do
       it { should_not be_readable.by 'other' }
       it { should_not be_writable.by 'other' }
       it { should_not be_executable.by 'other' }
-      its(:uid) { should cmp 0 }
-      its(:gid) { should cmp expected_gid }
-      its(:sticky) { should equal false }
-      its(:suid) { should equal false }
-      its(:sgid) { should equal false }
+      its('uid') { should cmp 0 }
+      its('gid') { should cmp expected_gid }
+      its('sticky') { should equal false }
+      its('suid') { should equal false }
+      its('sgid') { should equal false }
     end
   end
 end
@@ -183,11 +194,11 @@ control 'cis-dil-benchmark-6.1.6' do
     it { should_not be_executable.by 'group' }
     it { should_not be_writable.by 'other' }
     it { should_not be_executable.by 'other' }
-    its(:uid) { should cmp 0 }
-    its(:gid) { should cmp 0 }
-    its(:sticky) { should equal false }
-    its(:suid) { should equal false }
-    its(:sgid) { should equal false }
+    its('uid') { should cmp 0 }
+    its('gid') { should cmp 0 }
+    its('sticky') { should equal false }
+    its('suid') { should equal false }
+    its('sgid') { should equal false }
   end
 end
 
@@ -209,11 +220,11 @@ control 'cis-dil-benchmark-6.1.7' do
     it { should_not be_readable.by 'other' }
     it { should_not be_writable.by 'other' }
     it { should_not be_executable.by 'other' }
-    its(:uid) { should cmp 0 }
-    its(:gid) { should cmp 0 }
-    its(:sticky) { should equal false }
-    its(:suid) { should equal false }
-    its(:sgid) { should equal false }
+    its('uid') { should cmp 0 }
+    its('gid') { should cmp 0 }
+    its('sticky') { should equal false }
+    its('suid') { should equal false }
+    its('sgid') { should equal false }
   end
 end
 
@@ -236,11 +247,11 @@ control 'cis-dil-benchmark-6.1.8' do
     it { should be_readable.by 'other' }
     it { should_not be_writable.by 'other' }
     it { should_not be_executable.by 'other' }
-    its(:uid) { should cmp 0 }
-    its(:gid) { should cmp 0 }
-    its(:sticky) { should equal false }
-    its(:suid) { should equal false }
-    its(:sgid) { should equal false }
+    its('uid') { should cmp 0 }
+    its('gid') { should cmp 0 }
+    its('sticky') { should equal false }
+    its('suid') { should equal false }
+    its('sgid') { should equal false }
   end
 end
 
@@ -262,11 +273,11 @@ control 'cis-dil-benchmark-6.1.9' do
     it { should_not be_readable.by 'other' }
     it { should_not be_writable.by 'other' }
     it { should_not be_executable.by 'other' }
-    its(:uid) { should cmp 0 }
-    its(:gid) { should cmp 0 }
-    its(:sticky) { should equal false }
-    its(:suid) { should equal false }
-    its(:sgid) { should equal false }
+    its('uid') { should cmp 0 }
+    its('gid') { should cmp 0 }
+    its('sticky') { should equal false }
+    its('suid') { should equal false }
+    its('sgid') { should equal false }
   end
 end
 
@@ -279,7 +290,7 @@ control 'cis-dil-benchmark-6.1.10' do
   tag level: 1
 
   describe command("df --local -P | awk '{ if (NR!=1) print $6 }' | xargs -I '{}' find '{}' -xdev -type f -perm -0002") do
-    its(:stdout) { should eq '' }
+    its('stdout') { should eq '' }
   end
 end
 
@@ -292,7 +303,7 @@ control 'cis-dil-benchmark-6.1.11' do
   tag level: 1
 
   describe command("df --local -P | awk '{ if (NR!=1) print $6 }' | xargs -I '{}' find '{}' -xdev -nouser") do
-    its(:stdout) { should eq '' }
+    its('stdout') { should eq '' }
   end
 end
 
@@ -305,7 +316,7 @@ control 'cis-dil-benchmark-6.1.12' do
   tag level: 1
 
   describe command("df --local -P | awk '{ if (NR!=1) print $6 }' | xargs -I '{}' find '{}' -xdev -nogroup") do
-    its(:stdout) { should eq '' }
+    its('stdout') { should eq '' }
   end
 end
 
@@ -317,8 +328,13 @@ control 'cis-dil-benchmark-6.1.13' do
   tag cis: 'distribution-independent-linux:6.1.13'
   tag level: 1
 
-  describe 'cis-dil-benchmark-6.1.13' do
-    skip 'Not implemented'
+  # Use an expected readable inventory file
+  describe file('/root/cis_allow_suid') do
+    it { should exist }
+  end
+
+  describe command("df --local -P | awk '{if (NR!=1) print $6}' | xargs -I '{}' find '{}' -xdev -type f -perm -4000 | diff /root/cis_allow_suid -") do
+    its('stdout') { should eq '' }
   end
 end
 
@@ -330,7 +346,12 @@ control 'cis-dil-benchmark-6.1.14' do
   tag cis: 'distribution-independent-linux:6.1.14'
   tag level: 1
 
-  describe 'cis-dil-benchmark-6.1.14' do
-    skip 'Not implemented'
+  # Use an expected readable inventory file
+  describe file('/root/cis_allow_sgid') do
+    it { should exist }
+  end
+
+  describe command("df --local -P | awk '{if (NR!=1) print $6}' | xargs -I '{}' find '{}' -xdev -type f -perm -2000 | diff /root/cis_allow_sgid -") do
+    its('stdout') { should eq '' }
   end
 end
