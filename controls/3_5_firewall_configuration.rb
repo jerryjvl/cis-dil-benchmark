@@ -26,15 +26,10 @@ control 'cis-dil-benchmark-3.5.1.1' do
   tag cis: 'distribution-independent-linux:3.5.1.1'
   tag level: 1
 
-  %w(INPUT OUTPUT FORWARD).each do |chain|
-    describe.one do
-      describe ip6tables do
-        it { should have_rule("-P #{chain} DROP") }
-      end
-      describe ip6tables do
-        it { should have_rule("-P #{chain} REJECT") }
-      end
-    end
+  describe command('ip6tables -S') do
+    its('stdout') { should match /^-P ((?i).*INPUT) (DROP|REJECT)$/i }
+    its('stdout') { should match /^-P ((?i).*OUTPUT) (DROP|REJECT)$/i }
+    its('stdout') { should match /^-P ((?i).*FORWARD) (DROP|REJECT)$/i }
   end
 end
 
@@ -46,10 +41,10 @@ control 'cis-dil-benchmark-3.5.1.2' do
   tag cis: 'distribution-independent-linux:3.5.1.2'
   tag level: 1
 
-  describe iptables do
-    it { should have_rule('-A INPUT -i lo -j ACCEPT') }
-    it { should have_rule('-A OUTPUT -o lo -j ACCEPT') }
-    it { should have_rule('-A INPUT -s ::1 -j DROP') }
+  describe command('ip6tables -S') do
+    its('stdout') { should match /^-A ((?i).*INPUT) -i lo -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -o lo -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -s ::1 -j DROP$/ }
   end
 end
 
@@ -61,17 +56,13 @@ control 'cis-dil-benchmark-3.5.1.3' do
   tag cis: 'distribution-independent-linux:3.5.1.3'
   tag level: 1
 
-  %w(tcp udp icmp).each do |proto|
-    describe.one do
-      describe ip6tables do
-        it { should have_rule("-A OUTPUT -p #{proto} -m state --state NEW,ESTABLISHED -j ACCEPT") }
-        it { should have_rule("-A INPUT -p #{proto} -m state --state ESTABLISHED -j ACCEPT") }
-      end
-      describe ip6tables do
-        it { should have_rule("-A OUTPUT -p #{proto} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT") }
-        it { should have_rule("-A INPUT -p #{proto} -m conntrack --ctstate ESTABLISHED -j ACCEPT") }
-      end
-    end
+  describe command('ip6tables -S') do
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -p tcp -m (state --state|conntrack --ctstate) NEW,ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -p udp -m (state --state|conntrack --ctstate) NEW,ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -p icmp -m (state --state|conntrack --ctstate) NEW,ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -p tcp -m (state --state|conntrack --ctstate) ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -p udp -m (state --state|conntrack --ctstate) ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -p icmp -m (state --state|conntrack --ctstate) ESTABLISHED -j ACCEPT$/ }
   end
 end
 
@@ -83,10 +74,9 @@ control 'cis-dil-benchmark-3.5.1.4' do
   tag cis: 'distribution-independent-linux:3.5.1.4'
   tag level: 1
 
-  port.where { address !~ /^::1$/ }.ports.each do |port|
-    describe "Firewall rule should exist for port #{port}" do
-      subject { iptables.retrieve_rules.any? { |s| s =~ /\s+--dport #{port}\s+/ } }
-      it { should be true }
+  describe command('ip6tables -S') do
+    port.where { address !~ /^::1$/ }.ports.each do |port|
+      its('stdout') { should match /^-A ((?i).*INPUT) -p tcp --dport #{port} -m state --state NEW -j ACCEPT$/ }
     end
   end
 end
@@ -99,15 +89,10 @@ control 'cis-dil-benchmark-3.5.2.1' do
   tag cis: 'distribution-independent-linux:3.5.2.1'
   tag level: 1
 
-  %w(INPUT OUTPUT FORWARD).each do |chain|
-    describe.one do
-      describe iptables do
-        it { should have_rule("-P #{chain} DROP") }
-      end
-      describe iptables do
-        it { should have_rule("-P #{chain} REJECT") }
-      end
-    end
+  describe command('iptables -S') do
+    its('stdout') { should match /^-P ((?i).*INPUT) (DROP|REJECT)$/ }
+    its('stdout') { should match /^-P ((?i).*OUTPUT) (DROP|REJECT)$/ }
+    its('stdout') { should match /^-P ((?i).*FORWARD) (DROP|REJECT)$/ }
   end
 end
 
@@ -119,10 +104,10 @@ control 'cis-dil-benchmark-3.5.2.2' do
   tag cis: 'distribution-independent-linux:3.5.2.2'
   tag level: 1
 
-  describe iptables do
-    it { should have_rule('-A INPUT -i lo -j ACCEPT') }
-    it { should have_rule('-A OUTPUT -o lo -j ACCEPT') }
-    it { should have_rule('-A INPUT -s 127.0.0.0/8 -j DROP') }
+  describe command('iptables -S') do
+    its('stdout') { should match /^-A ((?i).*INPUT) -i lo -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -o lo -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -s 127.0.0.0\/8 -j DROP$/ }
   end
 end
 
@@ -134,17 +119,13 @@ control 'cis-dil-benchmark-3.5.2.3' do
   tag cis: 'distribution-independent-linux:3.5.2.3'
   tag level: 1
 
-  %w(tcp udp icmp).each do |proto|
-    describe.one do
-      describe iptables do
-        it { should have_rule("-A OUTPUT -p #{proto} -m state --state NEW,ESTABLISHED -j ACCEPT") }
-        it { should have_rule("-A INPUT -p #{proto} -m state --state ESTABLISHED -j ACCEPT") }
-      end
-      describe iptables do
-        it { should have_rule("-A OUTPUT -p #{proto} -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT") }
-        it { should have_rule("-A INPUT -p #{proto} -m conntrack --ctstate ESTABLISHED -j ACCEPT") }
-      end
-    end
+  describe command('iptables -S') do
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -p tcp -m (state --state|conntrack --ctstate) NEW,ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -p udp -m (state --state|conntrack --ctstate) NEW,ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*OUTPUT) -p icmp -m (state --state|conntrack --ctstate) NEW,ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -p tcp -m (state --state|conntrack --ctstate) ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -p udp -m (state --state|conntrack --ctstate) ESTABLISHED -j ACCEPT$/ }
+    its('stdout') { should match /^-A ((?i).*INPUT) -p icmp -m (state --state|conntrack --ctstate) ESTABLISHED -j ACCEPT$/ }
   end
 end
 
@@ -156,10 +137,9 @@ control 'cis-dil-benchmark-3.5.2.4' do
   tag cis: 'distribution-independent-linux:3.5.2.4'
   tag level: 1
 
-  port.where { address !~ /^127\.0\.0\.1$/ }.ports.each do |port|
-    describe "Firewall rule should exist for port #{port}" do
-      subject { iptables.retrieve_rules.any? { |s| s =~ /\s+--dport #{port}\s+/ } }
-      it { should be true }
+  describe command('iptables -S') do
+    port.where { address !~ /^127\.0\.0\.1$/ }.ports.each do |port|
+      its('stdout') { should match /^-A ((?i).*INPUT) -p tcp --dport #{port} -m state --state NEW -j ACCEPT$/ }
     end
   end
 end
